@@ -157,6 +157,16 @@ form.log label{display:grid;gap:4px;font-size:12px;color:var(--muted);min-width:
 @media (max-width:480px){.hrow{grid-template-columns:minmax(0,1fr) auto}.hrow .htrack{grid-column:1/-1;order:3}}
 table.compact th,table.compact td{padding:9px 6px}
 table.compact th{letter-spacing:.04em}
+.todo{display:grid}
+.todo-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+.todo-row:last-child{border-bottom:0}
+.todo-row .minibar{grid-column:1/-1}
+.todo-lbl{font-size:15px}
+.todo-lbl span{display:block;font-size:13px;color:var(--muted)}
+details.explain>summary{cursor:pointer;font-weight:700;font-size:14px;color:var(--accent);padding:4px 0}
+details.explain[open]>summary{margin-bottom:8px}
+details.explain .stack{gap:10px}
+ol.why{margin:0;padding-left:20px;display:grid;gap:8px;font-size:14px}
 .hint{border-radius:6px;padding:10px 12px;font-size:14px;font-weight:600}
 .hint.warn{background:var(--warn-soft);color:var(--warn)}
 .hint.bad{background:var(--bad-soft);color:var(--bad)}
@@ -207,16 +217,16 @@ input[type=range]{width:100%;accent-color:var(--accent);margin:0}
     </div>
 
     <div class="card stack" id="plan">
-      <h2>Was ich pro Woche tun muss</h2>
-      <p class="lead">Vom Ziel rückwärts gerechnet: Wie viele Briefe und Termine braucht es, damit genug neue Kunden kommen? Die Felder mit «Annahme» kannst du ändern.</p>
-      <label class="chk"><input type="checkbox" data-k="plan.useReal" id="useReal"><span>Meine echten Quoten verwenden</span></label>
-      <p class="note" id="realNote"></p>
-      <div class="grid2" id="planBox"></div>
-      <div class="stack">
-        <h3 id="weekTitle">Diese Woche</h3>
-        <div id="weekCheck"></div>
-        <p class="note">Grün: Wochenziel erreicht. Gelb: mindestens 70 %. Rot: weniger. Gezählt werden deine Einträge im Reiter «Zahlen» mit «Woche ab» in dieser Woche.</p>
+      <div>
+        <div class="eyebrow" id="weekTitle">Diese Woche</div>
+        <h2>Was ich diese Woche tun muss</h2>
       </div>
+      <p class="lead">Damit laufend genug neue Kunden reinkommen, brauchst du jede Woche eine bestimmte Menge Briefe und Termine. Hier steht, wie viel, und wie weit du schon bist.</p>
+      <div class="grid2" id="planBox"></div>
+      <p class="note">Grün: geschafft. Gelb: fast (mindestens 70 %). Rot: noch zu wenig. Gezählt wird, was du im Reiter «Zahlen» einträgst. Briefe zählen dort als «Kontakte».</p>
+      <p class="note"><b>Leadgen</b> hat hier kein Ziel für Briefe. Diese Kunden gewinnst du über deine Recruiting- und Webseiten-Kunden (siehe Playbook Leadgen).</p>
+      <label class="chk"><input type="checkbox" data-k="plan.useReal" id="useReal"><span>Mit meinen echten Zahlen rechnen statt mit Schätzungen</span></label>
+      <p class="note" id="realNote"></p>
     </div>
 
     <div class="grid2">
@@ -741,6 +751,11 @@ function weekRange(date){
   const sun=new Date(mon);sun.setDate(mon.getDate()+6);
   return {start:isoDate(mon),end:isoDate(sun)};
 }
+// Laufender Monat für Einträge, die pro Woche («Woche ab» = Montag) erfasst werden:
+// zählt jede Woche, die in diesem Monat liegt, auch die Woche, die im Vormonat beginnt.
+function monthRange(date){
+  return {start:weekRange(new Date(date.getFullYear(),date.getMonth(),1)).start,end:isoDate(new Date(date.getFullYear(),date.getMonth()+1,0))};
+}
 function weekActuals(entries,offer,range){
   const a={letters:0,meetings:0,clients:0};
   entries.forEach(l=>{if(l.offer===offer&&l.week>=range.start&&l.week<=range.end){a.letters+=+l.contacts||0;a.meetings+=+l.meetings||0;a.clients+=+l.won||0;}});
@@ -757,14 +772,14 @@ function priceScenario(revenue,basePrice,changePct,hoursPerClient){
   const after=newPrice>0?roundUp(revenue/newPrice):0;
   return {newPrice,before,after,hoursDiff:(after-before)*hoursPerClient};
 }
-window.CockpitCalc={funnel,roundUp,realRates,countLoggedWeeks,weekRange,weekActuals,weekStatus,profitPerClient,profitPerHour,hoursForClients,priceScenario};
+window.CockpitCalc={funnel,roundUp,realRates,countLoggedWeeks,weekRange,monthRange,weekActuals,weekStatus,profitPerClient,profitPerHour,hoursForClients,priceScenario};
 
 /* ---------- eingaben der rechner ---------- */
 const OFFER_KEYS=[["rec","Social Recruiting","Recruiting"],["lg","Leadgen","Leadgen"],["web","Webseiten","Webseite"]];
 const PLAN_SHARE={rec:15000,lg:4500,web:3500};
 const PLAN_OFFERS=[
-  {key:"rec",offer:"Social Recruiting",fields:[["target","Ziel: aktive Mandate",1],["duration","Dauer pro Mandat (Monate)",1],["meetRate","Termine pro Brief (%)",1],["closeRate","Abschlüsse pro Termin (%)",1]]},
-  {key:"web",offer:"Webseiten",fields:[["target","Ziel: Webseiten pro Monat",1],["meetRate","Termine pro Brief (%)",1],["closeRate","Abschlüsse pro Termin (%)",1]]}
+  {key:"rec",offer:"Social Recruiting",fields:[["target","Ziel: so viele Recruiting-Kunden gleichzeitig",1],["duration","So viele Monate bleibt ein Kunde im Schnitt",1],["meetRate","Von 100 Briefen führen so viele zu einem Termin",1],["closeRate","Von 100 Terminen werden so viele zu Kunden",1]]},
+  {key:"web",offer:"Webseiten",fields:[["target","Ziel: so viele verkaufte Webseiten pro Monat",1],["meetRate","Von 100 Briefen führen so viele zu einem Termin",1],["closeRate","Von 100 Terminen werden so viele zu Kunden",1]]}
 ];
 const nf=(n,d=0)=>(+n).toLocaleString("de-CH",{maximumFractionDigits:d});
 const field=(k,label,min,step)=>`<label>${label} <span class="tag">Annahme</span><input type="number" min="${min}" step="${step||1}" data-k="${k}"></label>`;
@@ -772,9 +787,14 @@ function getPath(k){return k.split(".").reduce((o,p)=>o==null?o:o[p],state);}
 function setPath(k,v){const ps=k.split(".");let o=state;ps.slice(0,-1).forEach(p=>o=o[p]);o[ps[ps.length-1]]=v;}
 
 function buildCalcInputs(){
-  $("#planBox").innerHTML=PLAN_OFFERS.map(o=>`<div class="stack"><h3>${o.offer}</h3>
-    <div class="fields">${o.fields.map(f=>field(`plan.${o.key}.${f[0]}`,f[1],f[2])).join("")}</div>
-    <p class="note" id="rates-${o.key}"></p><div id="planRes-${o.key}"></div></div>`).join("");
+  $("#planBox").innerHTML=PLAN_OFFERS.map(o=>`<div class="stack" style="gap:8px"><h3>${o.offer}</h3>
+    <div class="todo" id="todo-${o.key}"></div>
+    <details class="explain"><summary>Wie kommen diese Zahlen zustande?</summary><div class="stack">
+      <ol class="why" id="why-${o.key}"></ol>
+      <p class="note" id="src-${o.key}"></p>
+      <div class="k">Schätzungen anpassen</div>
+      <div class="fields">${o.fields.map(f=>field(`plan.${o.key}.${f[0]}`,f[1],f[2])).join("")}</div>
+    </div></details></div>`).join("");
   $("#profitInputs").innerHTML=OFFER_KEYS.map(([k,name])=>`<div class="stack" style="gap:6px"><h3>${name}</h3><div class="fields">
     ${field("mix.price_"+k,k==="web"?"Preis einmalig (CHF)":"Preis pro Monat (CHF)",0,50)}
     ${field("econ.hours_"+k,k==="web"?"Stunden pro Projekt":"Stunden pro Monat",0,1)}
@@ -804,34 +824,48 @@ document.addEventListener("change",e=>{if(e.target.id==="useReal"){refresh();sav
 function ratesFor(o,useReal){
   const p=state.plan[o.key];
   const a={meetRate:p.meetRate/100,closeRate:p.closeRate/100};
-  if(!useReal) return Object.assign(a,{src:"Annahme"});
+  if(!useReal) return Object.assign(a,{src:"Das sind Schätzungen."});
   const r=realRates(logs,o.offer);
   return {meetRate:r.meetRate??a.meetRate,closeRate:r.closeRate??a.closeRate,
-    src:r.meetRate==null&&r.closeRate==null?"Annahme, noch zu wenig Einträge":r.meetRate==null||r.closeRate==null?"teils Annahme, noch zu wenig Einträge":"deine Einträge"};
+    src:r.meetRate==null&&r.closeRate==null?"Für dieses Angebot gibt es noch zu wenig Einträge, darum gelten die Schätzungen.":r.meetRate==null||r.closeRate==null?"Teils aus deinen Einträgen, teils geschätzt (zu wenig Einträge).":"Diese Werte kommen aus deinen Einträgen."};
+}
+const STATUS_COLOR={good:"var(--good)",warn:"var(--warn)",bad:"var(--bad)"},STATUS_PILL={good:"p-top",warn:"p-mid",bad:"p-no"};
+function todoRow(what,when,done,target){
+  const st=weekStatus(done,target),w=target>0?Math.min(1,done/target)*100:100;
+  return `<div class="todo-row"><div class="todo-lbl"><b>${target} ${what}</b><span>${when} · erledigt: ${done}</span></div>
+    <span class="pill ${STATUS_PILL[st]}">${done} / ${target}</span>
+    <div class="minibar"><span style="width:${w}%;background:${STATUS_COLOR[st]}"></span></div></div>`;
+}
+function whySteps(o,p,f,r){
+  const pc=x=>nf(x*100,1),c=x=>nf(x,1),kunden=x=>c(x)+(c(x)==="1"?" neuen Kunden":" neue Kunden");
+  const first=o.key==="rec"
+    ?`Du willst <b>${p.target} Recruiting-Kunden gleichzeitig</b>. Ein Kunde bleibt etwa <b>${p.duration} Monate</b>. Damit es gleich viele bleiben, brauchst du jeden Monat etwa <b>${kunden(f.month.clients)}</b>.`
+    :`Du willst <b>${p.target} Webseiten pro Monat</b> verkaufen. Also brauchst du jeden Monat <b>${kunden(f.month.clients)}</b>.`;
+  return [first,
+    `Von 100 Terminen werden etwa <b>${pc(r.closeRate)}</b> zu Kunden. Für ${kunden(f.month.clients)} brauchst du <b>${c(f.month.meetings)} Termine pro Monat</b>. Das sind ${c(f.week.meetings)} pro Woche, aufgerundet <b>${roundUp(f.week.meetings)}</b>.`,
+    `Von 100 Briefen führen etwa <b>${pc(r.meetRate)}</b> zu einem Termin. Für ${c(f.month.meetings)} Termine brauchst du <b>${c(f.month.letters)} Briefe pro Monat</b>. Das sind ${c(f.week.letters)} pro Woche, aufgerundet <b>${roundUp(f.week.letters)}</b>.`,
+  ];
 }
 function renderPlan(){
   const weeks=countLoggedWeeks(logs),canReal=weeks>=4,useReal=canReal&&state.plan.useReal;
   $("#useReal").disabled=!canReal;
   $("#realNote").textContent=canReal
-    ?(useReal?"Gerechnet mit den Quoten aus deinen Einträgen. Wo Daten fehlen, gilt die Annahme.":"Du hast "+weeks+" Wochen eingetragen und kannst auf deine echten Quoten umstellen.")
-    :"Verfügbar ab 4 Wochen Einträgen im Reiter «Zahlen» (bisher "+weeks+").";
-  const range=weekRange(new Date()),rows=[];
+    ?(useReal?"Die Ziele oben rechnen jetzt mit dem, was bei dir wirklich passiert ist.":"Du hast "+weeks+" Wochen eingetragen. Schalte um, damit die Ziele mit deinen echten Erfahrungswerten rechnen.")
+    :"Geht ab 4 eingetragenen Wochen im Reiter «Zahlen» (bisher "+weeks+"). Bis dahin rechnet das Cockpit mit Schätzungen.";
+  const now=new Date(),week=weekRange(now),month=monthRange(now);
   PLAN_OFFERS.forEach(o=>{
     const p=state.plan[o.key],r=ratesFor(o,useReal);
     const f=funnel(p.target,o.key==="rec"?p.duration:1,r.meetRate,r.closeRate);
-    $("#rates-"+o.key).textContent=`Quoten: ${nf(r.meetRate*100,1)} % Termine pro Brief, ${nf(r.closeRate*100,1)} % Abschlüsse pro Termin (${r.src}).`;
-    $("#planRes-"+o.key).innerHTML=`<div class="tablewrap"><table><thead><tr><th></th><th class="num">pro Monat</th><th class="num">pro Woche</th></tr></thead><tbody>
-      <tr><td>Neue Kunden</td><td class="num">${roundUp(f.month.clients)}</td><td class="num">${roundUp(f.week.clients)}</td></tr>
-      <tr><td>Termine</td><td class="num">${roundUp(f.month.meetings)}</td><td class="num">${roundUp(f.week.meetings)}</td></tr>
-      <tr><td><b>Briefe / Kontakte</b></td><td class="num"><b>${roundUp(f.month.letters)}</b></td><td class="num"><b>${roundUp(f.week.letters)}</b></td></tr></tbody></table></div>`;
-    rows.push([o.key==="rec"?"Recruiting":"Webseiten",f.week,weekActuals(logs,o.offer,range)]);
+    const wa=weekActuals(logs,o.offer,week),ma=weekActuals(logs,o.offer,month);
+    $("#todo-"+o.key).innerHTML=
+      todoRow("Briefe senden","Diese Woche",wa.letters,roundUp(f.week.letters))+
+      todoRow(roundUp(f.week.meetings)===1?"Termin vereinbaren":"Termine vereinbaren","Diese Woche",wa.meetings,roundUp(f.week.meetings))+
+      todoRow(roundUp(f.month.clients)===1?"neuen Kunden gewinnen":"neue Kunden gewinnen","Diesen Monat",ma.clients,roundUp(f.month.clients));
+    $("#why-"+o.key).innerHTML=whySteps(o,p,f,r).map(t=>`<li>${t}</li>`).join("");
+    $("#src-"+o.key).textContent=r.src;
   });
   const d=s=>s.slice(8,10)+"."+s.slice(5,7)+".";
-  $("#weekTitle").textContent=`Diese Woche (Mo ${d(range.start)} – So ${d(range.end)})`;
-  const PILL={good:"p-top",warn:"p-mid",bad:"p-no"};
-  const cell=(a,t)=>{const tt=roundUp(t);return `<td class="num"><span class="pill ${PILL[weekStatus(a,tt)]}">${a} / ${tt}</span></td>`;};
-  $("#weekCheck").innerHTML=`<div class="tablewrap"><table class="compact"><thead><tr><th>Angebot</th><th class="num">Kontakte</th><th class="num">Termine</th><th class="num">Abschl.</th></tr></thead><tbody>
-    ${rows.map(([name,t,a])=>`<tr><td><b>${name}</b></td>${cell(a.letters,t.letters)}${cell(a.meetings,t.meetings)}${cell(a.clients,t.clients)}</tr>`).join("")}</tbody></table></div>`;
+  $("#weekTitle").textContent=`Diese Woche · Mo ${d(week.start)} – So ${d(week.end)}`;
 }
 function renderProfit(){
   const e=state.econ,m=state.mix;
