@@ -48,6 +48,7 @@ section.view{display:grid;gap:22px;padding-top:22px}
 .grid2>*{min-width:0}
 .lead{color:var(--muted);max-width:68ch}
 .stack{display:grid;gap:12px;align-content:start}
+.stack>*{min-width:0}
 /* Goal */
 .goal{display:grid;gap:14px}
 .goal-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:8px}
@@ -133,6 +134,34 @@ form.log label{display:grid;gap:4px;font-size:12px;color:var(--muted);min-width:
 .next li{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}
 .next li:last-child{border-bottom:0}
 .next .n{font:700 12px var(--mono);color:var(--accent);flex:none;width:18px}
+/* Rechner */
+.fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;align-items:end}
+.fields label{display:grid;gap:4px;font-size:12px;color:var(--muted);min-width:0}
+.fields .tag{margin-left:0;justify-self:start}
+.chk{display:flex;gap:8px;align-items:center;font-size:14px;cursor:pointer}
+.chk input{width:18px;height:18px;margin:0;accent-color:var(--accent);flex:none}
+.chk input:disabled+span{color:var(--muted)}
+.hbars{display:grid;gap:10px}
+.hrow{display:grid;grid-template-columns:120px minmax(0,1fr) 104px;gap:10px;align-items:center;font-size:14px}
+.hrow .htrack{height:12px;background:var(--sunk);border-radius:6px;overflow:hidden}
+.hrow .htrack span{display:block;height:100%;background:var(--muted)}
+.hrow.best .htrack span{background:var(--accent)}
+.hrow.best b{color:var(--accent)}
+.hval{font-family:var(--mono);text-align:right;font-variant-numeric:tabular-nums}
+@media (max-width:480px){.hrow{grid-template-columns:minmax(0,1fr) auto}.hrow .htrack{grid-column:1/-1;order:3}}
+table.compact th,table.compact td{padding:9px 6px}
+table.compact th{letter-spacing:.04em}
+.hint{border-radius:6px;padding:10px 12px;font-size:14px;font-weight:600}
+.hint.warn{background:var(--warn-soft);color:var(--warn)}
+.hint.bad{background:var(--bad-soft);color:var(--bad)}
+input[type=range]{width:100%;accent-color:var(--accent);margin:0}
+.slider{display:grid;gap:6px;padding:12px 0;border-bottom:1px solid var(--line)}
+.slider:last-of-type{border-bottom:0}
+.slider-head{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:baseline}
+.slider-out{font-size:14px;color:var(--muted)}
+.slider-out b{color:var(--fg);font-family:var(--mono);font-weight:700}
+.btnrow{display:flex;gap:10px;flex-wrap:wrap}
+.btn.alt{background:var(--sunk);color:var(--fg);border:1px solid var(--line)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 
@@ -142,7 +171,7 @@ form.log label{display:grid;gap:4px;font-size:12px;color:var(--muted);min-width:
       <div class="eyebrow">2Point Media · Vertrieb</div>
       <h1>Vertriebs-Cockpit</h1>
     </div>
-    <div class="sync" id="sync"><span class="dot" id="syncdot"></span><span id="synctxt">Verbinde …</span></div>
+    <div class="sync" id="sync"><span class="dot" id="syncdot"></span><span id="synctxt">Lade …</span></div>
   </header>
 
   <nav class="tabs" role="tablist" id="tabs">
@@ -171,6 +200,19 @@ form.log label{display:grid;gap:4px;font-size:12px;color:var(--muted);min-width:
       <p class="note">Trag hier ein, was aktuell läuft. Die Preise sind Annahmen aus unserer Planung und lassen sich anpassen. Webseiten zählen mit dem Betrag, der in diesem Monat abgeschlossen wurde.</p>
     </div>
 
+    <div class="card stack" id="plan">
+      <h2>Was ich pro Woche tun muss</h2>
+      <p class="lead">Vom Ziel rückwärts gerechnet: Wie viele Briefe und Termine braucht es, damit genug neue Kunden kommen? Die Felder mit «Annahme» kannst du ändern.</p>
+      <label class="chk"><input type="checkbox" data-k="plan.useReal" id="useReal"><span>Meine echten Quoten verwenden</span></label>
+      <p class="note" id="realNote"></p>
+      <div class="grid2" id="planBox"></div>
+      <div class="stack">
+        <h3 id="weekTitle">Diese Woche</h3>
+        <div id="weekCheck"></div>
+        <p class="note">Grün: Wochenziel erreicht. Gelb: mindestens 70 %. Rot: weniger. Gezählt werden deine Einträge im Reiter «Zahlen» mit «Woche ab» in dieser Woche.</p>
+      </div>
+    </div>
+
     <div class="grid2">
       <div class="card stack">
         <h2>Ein Weg zu 25'000</h2>
@@ -191,6 +233,27 @@ form.log label{display:grid;gap:4px;font-size:12px;color:var(--muted);min-width:
         <p class="lead">Die nächsten offenen Schritte aus dem Fahrplan.</p>
         <ol class="next" id="nextList" style="list-style:none;margin:0;padding:0"></ol>
       </div>
+    </div>
+
+    <div class="card stack" id="profit">
+      <h2>Gewinn pro Stunde</h2>
+      <p class="lead">Was dir ein Kunde pro Arbeitsstunde wirklich bringt. Der Preis ist derselbe wie oben im Umsatz-Mix.</p>
+      <div class="stack" id="profitInputs"></div>
+      <div class="hbars" id="profitBars"></div>
+      <div class="stack">
+        <h3>Wie voll bin ich?</h3>
+        <div class="fields"><label>Meine Stunden pro Monat für Kundenarbeit <span class="tag">Annahme</span><input type="number" min="1" step="5" data-k="econ.capacity"></label></div>
+        <div class="bar" id="capBar" aria-label="Auslastung"></div>
+        <p id="capText"></p>
+        <div id="capHint"></div>
+      </div>
+    </div>
+
+    <div class="card stack" id="pricing">
+      <h2>Preis-Rechner</h2>
+      <p class="lead">Was passiert, wenn du die Preise änderst? Grundlage ist der Weg zu 25'000 von oben: Recruiting bringt CHF 15'000, Leadgen 4'500, Webseiten 3'500. Die CHF 2'000 von Bestandskunden bleiben gleich.</p>
+      <div id="priceBox"></div>
+      <p id="priceTotal"></p>
     </div>
 
     <div class="card stack">
@@ -265,6 +328,17 @@ form.log label{display:grid;gap:4px;font-size:12px;color:var(--muted);min-width:
     <div class="card stack">
       <h2>Alle Einträge</h2>
       <div id="logTable"></div>
+    </div>
+
+    <div class="card stack">
+      <h2>Datensicherung</h2>
+      <p class="lead">Deine Daten liegen nur in diesem Browser auf diesem Gerät. Lade ab und zu eine Sicherung herunter, z.B. jeden Freitag. Mit «Daten laden» holst du sie zurück, auch auf einem anderen Gerät.</p>
+      <div class="btnrow">
+        <button class="btn" type="button" id="exportBtn">Daten sichern</button>
+        <button class="btn alt" type="button" id="importBtn">Daten laden</button>
+        <input type="file" id="importFile" accept=".json,application/json" hidden>
+      </div>
+      <div class="status" id="backupStatus" role="status"></div>
     </div>
   </section>
 </div>
@@ -440,19 +514,63 @@ const MARKETING=[
 ];
 
 /* ---------- state ---------- */
-let state={done:{},mix:{rec:0,lg:0,web:0,fix:0,price_rec:2500,price_lg:1500,price_web:1750}};
-let logs=[];
-let db=null, stateRef=null, writing=Promise.resolve();
+const DEFAULTS={
+  done:{},
+  mix:{rec:0,lg:0,web:0,fix:0,price_rec:2500,price_lg:1500,price_web:1750},
+  plan:{useReal:false,rec:{target:6,duration:6,meetRate:20,closeRate:35},web:{target:2,meetRate:4,closeRate:40}},
+  econ:{hours_rec:12,hours_lg:6,hours_web:15,cost_rec:0,cost_lg:0,cost_web:0,capacity:100},
+  price:{rec:0,lg:0,web:0}
+};
+const clone=o=>JSON.parse(JSON.stringify(o));
+// Gespeicherte Daten mit den Standardwerten zusammenführen, damit neue Felder immer einen Wert haben.
+function normalizeState(d){
+  d=d&&typeof d==="object"?d:{};
+  const s=clone(DEFAULTS);
+  s.done=Object.assign({},d.done||{});
+  ["mix","econ","price"].forEach(k=>Object.assign(s[k],d[k]||{}));
+  const pl=d.plan||{};
+  s.plan.useReal=!!pl.useReal;
+  Object.assign(s.plan.rec,pl.rec||{});Object.assign(s.plan.web,pl.web||{});
+  return s;
+}
+function normalizeLogs(arr){
+  if(!Array.isArray(arr)) return [];
+  return arr.filter(l=>l&&typeof l==="object").map(l=>({
+    id:String(l.id||newId()),week:String(l.week||""),offer:String(l.offer||""),channel:String(l.channel||""),
+    contacts:+l.contacts||0,talks:+l.talks||0,meetings:+l.meetings||0,won:+l.won||0,revenue:+l.revenue||0,
+    createdAt:String(l.createdAt||"")}));
+}
+const newId=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const sortLogs=()=>logs.sort((a,b)=>(b.week||"").localeCompare(a.week||"")||(b.createdAt||"").localeCompare(a.createdAt||""));
+
+/* Speicher im Browser (localStorage). Jeder Zugriff ist abgesichert, weil der Speicher gesperrt oder voll sein kann. */
+const KEY_STATE="cockpit-state", KEY_LOG="cockpit-log", KEY_SAVED="cockpit-saved";
+function readJSON(key){try{const v=localStorage.getItem(key);return v?JSON.parse(v):null;}catch(e){return null;}}
+function writeJSON(key,val){try{localStorage.setItem(key,JSON.stringify(val));return true;}catch(e){return false;}}
+
+let state=normalizeState(readJSON(KEY_STATE));
+let logs=normalizeLogs(readJSON(KEY_LOG));sortLogs();
 const $=s=>document.querySelector(s);
 const fmt=n=>"CHF "+Math.round(n).toLocaleString("de-CH");
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 
 function setSync(kind,txt){$("#syncdot").className="dot "+kind;$("#synctxt").textContent=txt;}
-function save(){
-  if(!stateRef) return;
-  const body=JSON.parse(JSON.stringify(state));
-  writing=writing.then(()=>stateRef.set(body)).then(()=>setSync("on","Gespeichert")).catch(e=>setSync("off","Speichern fehlgeschlagen"));
+function savedLabel(iso){
+  const d=new Date(iso);if(isNaN(d)) return "";
+  const time=d.toLocaleTimeString("de-CH",{hour:"2-digit",minute:"2-digit"});
+  return (isoDate(d)===isoDate(new Date())?"heute":d.toLocaleDateString("de-CH",{day:"2-digit",month:"2-digit",year:"numeric"}))+", "+time;
 }
+function showSaved(){
+  let at=null;try{at=localStorage.getItem(KEY_SAVED);}catch(e){}
+  if(at) setSync("on","Zuletzt gespeichert: "+savedLabel(at)); else setSync("","Noch nichts gespeichert");
+}
+function markSaved(ok){
+  if(!ok){setSync("off","Speichern fehlgeschlagen – bitte «Daten sichern»");return false;}
+  try{localStorage.setItem(KEY_SAVED,new Date().toISOString());}catch(e){}
+  showSaved();return true;
+}
+function save(){clearTimeout(mixTimer);return markSaved(writeJSON(KEY_STATE,state));}
+function saveLogs(){return markSaved(writeJSON(KEY_LOG,logs));}
 let mixTimer=null;
 function saveSoon(){clearTimeout(mixTimer);mixTimer=setTimeout(save,700);}
 
@@ -476,9 +594,9 @@ function buildMix(){
       ?`<div class="lbl"><i style="background:${COLORS[r.id]};width:10px;height:10px;border-radius:2px;flex:none;display:inline-block"></i><span>${r.label}</span></div><span></span><span class="x"></span><input type="number" id="mx-${r.id}" min="0" step="100" aria-label="${r.label} CHF pro Monat"><span class="sum" id="ms-${r.id}"></span>`
       :`<div class="lbl"><i style="background:${COLORS[r.id]};width:10px;height:10px;border-radius:2px;flex:none;display:inline-block"></i><span>${r.label}</span></div><input type="number" id="mx-${r.id}" min="0" aria-label="${r.label} Anzahl"><span class="x">×</span><input type="number" id="mp-${r.id}" min="0" step="50" aria-label="${r.label} Preis"><span class="sum" id="ms-${r.id}"></span>`;
     box.appendChild(row);
-    row.querySelector("#mx-"+r.id).addEventListener("input",e=>{state.mix[r.id]=Math.max(0,+e.target.value||0);renderGoal();saveSoon();});
+    row.querySelector("#mx-"+r.id).addEventListener("input",e=>{state.mix[r.id]=Math.max(0,+e.target.value||0);refresh();saveSoon();});
     const p=row.querySelector("#mp-"+r.id);
-    if(p) p.addEventListener("input",e=>{state.mix["price_"+r.id]=Math.max(0,+e.target.value||0);renderGoal();saveSoon();});
+    if(p) p.addEventListener("input",e=>{state.mix["price_"+r.id]=Math.max(0,+e.target.value||0);refresh();saveSoon();});
   });
 }
 function fillMixInputs(){
@@ -552,7 +670,7 @@ function renderMK(){
 /* ---------- zahlen ---------- */
 function fillSelect(id,arr){$(id).innerHTML=arr.map(a=>`<option>${esc(a)}</option>`).join("");}
 fillSelect("#f-offer",OFFERS);fillSelect("#f-chan",CHANNELS);
-(function(){const d=new Date();const day=(d.getDay()+6)%7;d.setDate(d.getDate()-day);$("#f-week").value=d.toISOString().slice(0,10);})();
+$("#f-week").value=weekRange(new Date()).start;
 const pct=(a,b)=>b>0?Math.round(a/b*100)+" %":"–";
 function renderLogs(){
   if(!logs.length){
@@ -572,35 +690,197 @@ function renderLogs(){
 }
 $("#logForm").addEventListener("submit",async e=>{
   e.preventDefault();
-  if(!db){$("#logStatus").textContent="Speichern ist in dieser Ansicht nicht verfügbar. Öffne das Cockpit angemeldet auf claude.ai.";return;}
-  const entry={week:$("#f-week").value,offer:$("#f-offer").value,channel:$("#f-chan").value,
+  const entry={id:newId(),week:$("#f-week").value,offer:$("#f-offer").value,channel:$("#f-chan").value,
     contacts:+$("#f-contacts").value||0,talks:+$("#f-talks").value||0,meetings:+$("#f-meet").value||0,won:+$("#f-won").value||0,revenue:+$("#f-rev").value||0,createdAt:new Date().toISOString()};
-  try{await db.collection("log").add(entry);$("#logStatus").textContent="Gespeichert.";["#f-contacts","#f-talks","#f-meet","#f-won","#f-rev"].forEach(s=>$(s).value=0);}
-  catch(err){$("#logStatus").textContent=err&&err.code==="quota_exceeded"?"Speicher voll. Lösche alte Einträge.":"Speichern fehlgeschlagen. Bitte nochmal versuchen.";}
+  logs.push(entry);sortLogs();
+  if(saveLogs()){$("#logStatus").textContent="Gespeichert.";["#f-contacts","#f-talks","#f-meet","#f-won","#f-rev"].forEach(s=>$(s).value=0);}
+  else $("#logStatus").textContent="Speichern im Browser fehlgeschlagen. Lade sofort mit «Daten sichern» eine Sicherung herunter.";
+  renderLogs();refresh();
 });
-$("#logTable").addEventListener("click",async e=>{
-  const id=e.target.dataset&&e.target.dataset.del;if(!id||!db)return;
+$("#logTable").addEventListener("click",e=>{
+  const id=e.target.dataset&&e.target.dataset.del;if(!id)return;
   if(e.target.dataset.confirm!=="1"){e.target.dataset.confirm="1";e.target.textContent="Sicher?";setTimeout(()=>{if(e.target.isConnected){e.target.dataset.confirm="";e.target.textContent="Löschen";}},3000);return;}
-  try{await db.collection("log").doc(id).delete();}catch(err){$("#logStatus").textContent="Löschen fehlgeschlagen.";}
+  logs=logs.filter(l=>l.id!==id);
+  if(!saveLogs()) $("#logStatus").textContent="Löschen konnte nicht gespeichert werden.";
+  renderLogs();refresh();
+});
+
+/* ---------- rechnungen (reine Funktionen, ohne Anzeige) ---------- */
+const WEEKS_PER_MONTH=4.33;
+// Aufrunden, ohne dass Rundungsfehler wie 5.0000001 zu 6 werden.
+function roundUp(x){return Math.ceil(x-1e-9);}
+function newClientsPerMonth(targetClients,durationMonths){return durationMonths>0?targetClients/durationMonths:0;}
+function meetingsNeeded(newClients,closeRate){return closeRate>0?newClients/closeRate:0;}
+function lettersNeeded(meetings,meetRate){return meetRate>0?meetings/meetRate:0;}
+function perWeek(perMonth){return perMonth/WEEKS_PER_MONTH;}
+// Rückwärtsrechnung. Quoten als Anteil (0.2 = 20 %). Ergebnisse ungerundet.
+function funnel(target,duration,meetRate,closeRate){
+  const clients=newClientsPerMonth(target,duration);
+  const meetings=meetingsNeeded(clients,closeRate);
+  const letters=lettersNeeded(meetings,meetRate);
+  return {month:{clients,meetings,letters},week:{clients:perWeek(clients),meetings:perWeek(meetings),letters:perWeek(letters)}};
+}
+function countLoggedWeeks(entries){return new Set(entries.map(l=>l.week).filter(Boolean)).size;}
+// Echte Quoten eines Angebots aus allen Einträgen. null, wenn zu wenig Daten für die Quote.
+function realRates(entries,offer){
+  let contacts=0,meetings=0,won=0;
+  entries.forEach(l=>{if(l.offer===offer){contacts+=+l.contacts||0;meetings+=+l.meetings||0;won+=+l.won||0;}});
+  return {meetRate:contacts>0&&meetings>0?meetings/contacts:null,closeRate:meetings>0&&won>0?won/meetings:null};
+}
+function isoDate(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
+// Montag bis Sonntag der Woche, in der das Datum liegt.
+function weekRange(date){
+  const mon=new Date(date.getFullYear(),date.getMonth(),date.getDate());
+  mon.setDate(mon.getDate()-(mon.getDay()+6)%7);
+  const sun=new Date(mon);sun.setDate(mon.getDate()+6);
+  return {start:isoDate(mon),end:isoDate(sun)};
+}
+function weekActuals(entries,offer,range){
+  const a={letters:0,meetings:0,clients:0};
+  entries.forEach(l=>{if(l.offer===offer&&l.week>=range.start&&l.week<=range.end){a.letters+=+l.contacts||0;a.meetings+=+l.meetings||0;a.clients+=+l.won||0;}});
+  return a;
+}
+function weekStatus(actual,target){if(target<=0||actual>=target)return "good";return actual>=0.7*target?"warn":"bad";}
+function profitPerClient(price,cost){return price-cost;}
+function profitPerHour(price,cost,hours){return hours>0?(price-cost)/hours:0;}
+function hoursForClients(counts,hours){return counts.rec*hours.rec+counts.lg*hours.lg+counts.web*hours.web;}
+// Kunden, die es für einen festen Umsatz-Anteil braucht, vor und nach der Preisänderung.
+function priceScenario(revenue,basePrice,changePct,hoursPerClient){
+  const newPrice=basePrice*(1+changePct/100);
+  const before=basePrice>0?roundUp(revenue/basePrice):0;
+  const after=newPrice>0?roundUp(revenue/newPrice):0;
+  return {newPrice,before,after,hoursDiff:(after-before)*hoursPerClient};
+}
+window.CockpitCalc={funnel,roundUp,realRates,countLoggedWeeks,weekRange,weekActuals,weekStatus,profitPerClient,profitPerHour,hoursForClients,priceScenario};
+
+/* ---------- eingaben der rechner ---------- */
+const OFFER_KEYS=[["rec","Social Recruiting","Recruiting"],["lg","Leadgen","Leadgen"],["web","Webseiten","Webseite"]];
+const PLAN_SHARE={rec:15000,lg:4500,web:3500};
+const PLAN_OFFERS=[
+  {key:"rec",offer:"Social Recruiting",fields:[["target","Ziel: aktive Mandate",1],["duration","Dauer pro Mandat (Monate)",1],["meetRate","Termine pro Brief (%)",1],["closeRate","Abschlüsse pro Termin (%)",1]]},
+  {key:"web",offer:"Webseiten",fields:[["target","Ziel: Webseiten pro Monat",1],["meetRate","Termine pro Brief (%)",1],["closeRate","Abschlüsse pro Termin (%)",1]]}
+];
+const nf=(n,d=0)=>(+n).toLocaleString("de-CH",{maximumFractionDigits:d});
+const field=(k,label,min,step)=>`<label>${label} <span class="tag">Annahme</span><input type="number" min="${min}" step="${step||1}" data-k="${k}"></label>`;
+function getPath(k){return k.split(".").reduce((o,p)=>o==null?o:o[p],state);}
+function setPath(k,v){const ps=k.split(".");let o=state;ps.slice(0,-1).forEach(p=>o=o[p]);o[ps[ps.length-1]]=v;}
+
+function buildCalcInputs(){
+  $("#planBox").innerHTML=PLAN_OFFERS.map(o=>`<div class="stack"><h3>${o.offer}</h3>
+    <div class="fields">${o.fields.map(f=>field(`plan.${o.key}.${f[0]}`,f[1],f[2])).join("")}</div>
+    <p class="note" id="rates-${o.key}"></p><div id="planRes-${o.key}"></div></div>`).join("");
+  $("#profitInputs").innerHTML=OFFER_KEYS.map(([k,name])=>`<div class="stack" style="gap:6px"><h3>${name}</h3><div class="fields">
+    ${field("mix.price_"+k,k==="web"?"Preis einmalig (CHF)":"Preis pro Monat (CHF)",0,50)}
+    ${field("econ.hours_"+k,k==="web"?"Stunden pro Projekt":"Stunden pro Monat",0,1)}
+    ${field("econ.cost_"+k,k==="web"?"Direkte Kosten pro Projekt (CHF)":"Direkte Kosten pro Monat (CHF)",0,50)}</div></div>`).join("");
+  $("#priceBox").innerHTML=OFFER_KEYS.map(([k,name])=>`<div class="slider">
+    <div class="slider-head"><h3>${name}</h3><span class="count" id="pv-${k}"></span></div>
+    <input type="range" min="-20" max="40" step="5" data-k="price.${k}" aria-label="Preisänderung ${name} in Prozent">
+    <div class="slider-out" id="po-${k}"></div></div>`).join("");
+}
+function fillCalcInputs(){
+  document.querySelectorAll("[data-k]").forEach(el=>{
+    if(el===document.activeElement&&el.type!=="range") return;
+    const v=getPath(el.dataset.k);
+    if(el.type==="checkbox") el.checked=!!v; else el.value=v;
+  });
+}
+document.addEventListener("input",e=>{
+  const el=e.target;if(!el.dataset||!el.dataset.k)return;
+  const v=el.type==="checkbox"?el.checked:Math.max(+el.min||0,+el.value||0);
+  setPath(el.dataset.k,v);
+  if(el.dataset.k.startsWith("mix.")) fillMixInputs();
+  refresh();saveSoon();
+});
+document.addEventListener("change",e=>{if(e.target.id==="useReal"){refresh();save();}});
+
+/* ---------- anzeige der rechner ---------- */
+function ratesFor(o,useReal){
+  const p=state.plan[o.key];
+  const a={meetRate:p.meetRate/100,closeRate:p.closeRate/100};
+  if(!useReal) return Object.assign(a,{src:"Annahme"});
+  const r=realRates(logs,o.offer);
+  return {meetRate:r.meetRate??a.meetRate,closeRate:r.closeRate??a.closeRate,
+    src:r.meetRate==null&&r.closeRate==null?"Annahme, noch zu wenig Einträge":r.meetRate==null||r.closeRate==null?"teils Annahme, noch zu wenig Einträge":"deine Einträge"};
+}
+function renderPlan(){
+  const weeks=countLoggedWeeks(logs),canReal=weeks>=4,useReal=canReal&&state.plan.useReal;
+  $("#useReal").disabled=!canReal;
+  $("#realNote").textContent=canReal
+    ?(useReal?"Gerechnet mit den Quoten aus deinen Einträgen. Wo Daten fehlen, gilt die Annahme.":"Du hast "+weeks+" Wochen eingetragen und kannst auf deine echten Quoten umstellen.")
+    :"Verfügbar ab 4 Wochen Einträgen im Reiter «Zahlen» (bisher "+weeks+").";
+  const range=weekRange(new Date()),rows=[];
+  PLAN_OFFERS.forEach(o=>{
+    const p=state.plan[o.key],r=ratesFor(o,useReal);
+    const f=funnel(p.target,o.key==="rec"?p.duration:1,r.meetRate,r.closeRate);
+    $("#rates-"+o.key).textContent=`Quoten: ${nf(r.meetRate*100,1)} % Termine pro Brief, ${nf(r.closeRate*100,1)} % Abschlüsse pro Termin (${r.src}).`;
+    $("#planRes-"+o.key).innerHTML=`<div class="tablewrap"><table><thead><tr><th></th><th class="num">pro Monat</th><th class="num">pro Woche</th></tr></thead><tbody>
+      <tr><td>Neue Kunden</td><td class="num">${roundUp(f.month.clients)}</td><td class="num">${roundUp(f.week.clients)}</td></tr>
+      <tr><td>Termine</td><td class="num">${roundUp(f.month.meetings)}</td><td class="num">${roundUp(f.week.meetings)}</td></tr>
+      <tr><td><b>Briefe / Kontakte</b></td><td class="num"><b>${roundUp(f.month.letters)}</b></td><td class="num"><b>${roundUp(f.week.letters)}</b></td></tr></tbody></table></div>`;
+    rows.push([o.key==="rec"?"Recruiting":"Webseiten",f.week,weekActuals(logs,o.offer,range)]);
+  });
+  const d=s=>s.slice(8,10)+"."+s.slice(5,7)+".";
+  $("#weekTitle").textContent=`Diese Woche (Mo ${d(range.start)} – So ${d(range.end)})`;
+  const PILL={good:"p-top",warn:"p-mid",bad:"p-no"};
+  const cell=(a,t)=>{const tt=roundUp(t);return `<td class="num"><span class="pill ${PILL[weekStatus(a,tt)]}">${a} / ${tt}</span></td>`;};
+  $("#weekCheck").innerHTML=`<div class="tablewrap"><table class="compact"><thead><tr><th>Angebot</th><th class="num">Kontakte</th><th class="num">Termine</th><th class="num">Abschl.</th></tr></thead><tbody>
+    ${rows.map(([name,t,a])=>`<tr><td><b>${name}</b></td>${cell(a.letters,t.letters)}${cell(a.meetings,t.meetings)}${cell(a.clients,t.clients)}</tr>`).join("")}</tbody></table></div>`;
+}
+function renderProfit(){
+  const e=state.econ,m=state.mix;
+  const list=OFFER_KEYS.map(([k,name,short])=>({k,name,short,perClient:profitPerClient(m["price_"+k],e["cost_"+k]),perHour:profitPerHour(m["price_"+k],e["cost_"+k],e["hours_"+k])}));
+  const max=Math.max(1,...list.map(x=>x.perHour));
+  const best=list.reduce((a,b)=>b.perHour>a.perHour?b:a);
+  $("#profitBars").innerHTML=`<div class="k">Gewinn pro Stunde</div>`+list.map(x=>`<div class="hrow ${x===best&&x.perHour>0?"best":""}">
+    <span><b>${x.short}</b>${x===best&&x.perHour>0?' <span class="pill p-ok">Bestes</span>':""}</span>
+    <div class="htrack"><span style="width:${Math.max(0,x.perHour)/max*100}%"></span></div>
+    <span class="hval">${fmt(x.perHour)}/Std.</span></div>`).join("")+
+    `<p class="note">Gewinn pro Kunde: ${list.map(x=>`${x.short} ${fmt(x.perClient)}${x.k==="web"?" pro Projekt":" pro Monat"}`).join(" · ")}</p>`;
+  const used=hoursForClients({rec:+m.rec||0,lg:+m.lg||0,web:+m.web||0},{rec:e.hours_rec,lg:e.hours_lg,web:e.hours_web});
+  const share=e.capacity>0?used/e.capacity:0;
+  const color=share>=1?"var(--bad)":share>=.8?"var(--warn)":"var(--good)";
+  $("#capBar").innerHTML=`<span style="width:${Math.min(1,share)*100}%;background:${color}"></span>`;
+  $("#capText").textContent=`Deine eingetragenen Kunden brauchen ${nf(used)} von ${nf(e.capacity)} Stunden pro Monat (${Math.round(share*100)} %). Bestandskunden und Wartung sind nicht mitgezählt.`;
+  $("#capHint").innerHTML=share>=.8?`<div class="hint ${share>=1?"bad":"warn"}">Bald voll: Preise erhöhen oder Hilfe holen.</div>`:"";
+}
+function renderPrice(){
+  const e=state.econ,m=state.mix;let sum=0;
+  OFFER_KEYS.forEach(([k,name])=>{
+    const pct=+state.price[k]||0,r=priceScenario(PLAN_SHARE[k],+m["price_"+k]||0,pct,e["hours_"+k]);
+    sum+=r.hoursDiff;
+    $("#pv-"+k).textContent=(pct>0?"+":"")+pct+" % · "+fmt(r.newPrice);
+    const diff=r.hoursDiff===0?"gleich viele Stunden":r.hoursDiff<0?`<b>${nf(-r.hoursDiff)} Std. weniger</b> pro Monat`:`<b>${nf(r.hoursDiff)} Std. mehr</b> pro Monat`;
+    $("#po-"+k).innerHTML=`Für CHF ${nf(PLAN_SHARE[k])} brauchst du <b>${r.after}</b> statt ${r.before} ${k==="web"?"Webseiten pro Monat":"Kunden"} · ${diff}`;
+  });
+  $("#priceTotal").innerHTML=sum===0?"Insgesamt: gleich viel Arbeit für CHF 25'000.":`Insgesamt für CHF 25'000: <b>${nf(Math.abs(sum))} Stunden ${sum<0?"weniger":"mehr"}</b> pro Monat.`;
+}
+function refresh(){renderGoal();renderPlan();renderProfit();renderPrice();fillCalcInputs();}
+
+/* ---------- datensicherung ---------- */
+$("#exportBtn").addEventListener("click",()=>{
+  const data={app:"2point-vertriebs-cockpit",version:1,exportedAt:new Date().toISOString(),state,log:logs};
+  const url=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:"application/json"}));
+  const a=document.createElement("a");a.href=url;a.download="cockpit-sicherung-"+isoDate(new Date())+".json";
+  document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+  $("#backupStatus").textContent="Sicherung heruntergeladen. Leg die Datei z.B. in deinen Cloud-Ordner.";
+});
+$("#importBtn").addEventListener("click",()=>$("#importFile").click());
+$("#importFile").addEventListener("change",async e=>{
+  const file=e.target.files&&e.target.files[0];e.target.value="";if(!file)return;
+  let data;
+  try{data=JSON.parse(await file.text());}catch(err){$("#backupStatus").textContent="Diese Datei konnte nicht gelesen werden.";return;}
+  if(!data||typeof data!=="object"||!data.state||!Array.isArray(data.log)){$("#backupStatus").textContent="Das ist keine Cockpit-Sicherung.";return;}
+  if(!confirm("Sicherung laden? Die aktuellen Daten in diesem Browser werden ersetzt ("+data.log.length+" Einträge in der Datei)."))return;
+  state=normalizeState(data.state);logs=normalizeLogs(data.log);sortLogs();
+  const ok=save()&&saveLogs();
+  fillMixInputs();renderPhases();renderLogs();refresh();
+  $("#backupStatus").textContent=ok?"Sicherung geladen: "+logs.length+(logs.length===1?" Eintrag.":" Einträge."):"Geladen, aber im Browser nicht gespeichert. Speicher prüfen.";
 });
 
 /* ---------- init ---------- */
-buildMix();fillMixInputs();renderGoal();renderPhases();renderPB();renderMK();renderLogs();
+buildMix();buildCalcInputs();fillMixInputs();renderPhases();renderPB();renderMK();renderLogs();refresh();showSaved();
 try{const t=localStorage.getItem("tab");if(t)showTab(t);}catch(e){}
 if(location.hash) showTab(location.hash.slice(1));
-
-(async()=>{
-  try{db=window.claude&&await window.claude.use("db");}catch(e){db=null;}
-  if(!db){setSync("off","Nur Ansicht: Speichern nicht verfügbar");return;}
-  setSync("on","Verbunden");
-  stateRef=db.doc("cockpit/state");
-  stateRef.onSnapshot(s=>{
-    if(s.exists){const d=s.data()||{};state={done:Object.assign({},d.done||{}),mix:Object.assign({},state.mix,d.mix||{})};}
-    fillMixInputs();renderGoal();renderPhases();
-  },()=>setSync("off","Verbindung unterbrochen"));
-  db.collection("log").orderBy("week","desc").onSnapshot(s=>{
-    logs=s.docs.map(d=>Object.assign({id:d.id},d.data()));renderLogs();
-  },()=>setSync("off","Verbindung unterbrochen"));
-})();
 })();
 </script>
