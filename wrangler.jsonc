@@ -1,0 +1,10 @@
+// Cloudflare: veröffentlicht den Ordner "public" als statische Webseite (kein Build-Schritt).
+{
+  "name": "2pointmedia-vertriebs-cockpit",
+  "compatibility_date": "2026-10-01",
+  "assets": {
+    "directory": "./public"
+  },
+  // Nötig für Vorschauen (Branches/Pull Requests), die Cloudflare mit "wrangler preview" baut.
+  "previews": {}
+}
