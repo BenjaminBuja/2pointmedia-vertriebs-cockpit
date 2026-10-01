@@ -1,0 +1,604 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>2Point Vertriebs-Cockpit</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=Source+Sans+3:wght@400;600;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: sticky tab bar over a single centered column; tool-like, scanned not read. */
+:root{
+  --bg:#f3f4f2; --surface:#ffffff; --sunk:#e9ebe7; --fg:#1d2321; --muted:#5d6762; --line:#d5d9d4;
+  --accent:#e2621b; --accent-soft:#fbe5d6; --accent-fg:#ffffff;
+  --good:#2f7d4f; --good-soft:#dcefe3; --warn:#a86b00; --warn-soft:#f6ebcf; --bad:#b03a2e; --bad-soft:#f5dcd8;
+  --display:"Archivo","Arial Narrow",Arial,sans-serif;
+  --body:"Source Sans 3","Segoe UI",Arial,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+  --r:8px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#151917; --surface:#1d2220; --sunk:#252b28; --fg:#e7ebe8; --muted:#9aa49f; --line:#333b37;
+  --accent:#f07a35; --accent-soft:#3d2618; --accent-fg:#1a0f08;
+  --good:#5cbf86; --good-soft:#1c3326; --warn:#e0a63c; --warn-soft:#352a14; --bad:#e2766a; --bad-soft:#3a1f1c; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#151917; --surface:#1d2220; --sunk:#252b28; --fg:#e7ebe8; --muted:#9aa49f; --line:#333b37;
+  --accent:#f07a35; --accent-soft:#3d2618; --accent-fg:#1a0f08;
+  --good:#5cbf86; --good-soft:#1c3326; --warn:#e0a63c; --warn-soft:#352a14; --bad:#e2766a; --bad-soft:#3a1f1c; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.5}
+.wrap{max-width:1080px;margin:0 auto;padding-inline:16px;padding-block:0 64px}
+header.top{padding-block:28px 14px;display:flex;flex-wrap:wrap;align-items:end;justify-content:space-between;gap:12px}
+.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+h1{font-family:var(--display);font-weight:800;font-size:clamp(26px,4vw,36px);line-height:1.05;margin:4px 0 0;text-wrap:balance;letter-spacing:-.01em}
+h2{font-family:var(--display);font-weight:700;font-size:21px;margin:0;text-wrap:balance}
+h3{font-family:var(--display);font-weight:700;font-size:16px;margin:0}
+p{margin:0}
+.sync{font-family:var(--mono);font-size:11px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--muted)}
+.dot.on{background:var(--good)} .dot.off{background:var(--warn)}
+nav.tabs{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);border-bottom:1px solid var(--line);display:flex;gap:4px;overflow-x:auto;scrollbar-width:none}
+nav.tabs button{font:600 14px var(--body);background:none;border:0;color:var(--muted);padding:12px 12px 10px;border-bottom:3px solid transparent;cursor:pointer;white-space:nowrap}
+nav.tabs button[aria-selected="true"]{color:var(--fg);border-bottom-color:var(--accent)}
+nav.tabs button:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+section.view{display:grid;gap:22px;padding-top:22px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:18px}
+.grid2>*{min-width:0}
+.lead{color:var(--muted);max-width:68ch}
+.stack{display:grid;gap:12px;align-content:start}
+/* Goal */
+.goal{display:grid;gap:14px}
+.goal-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:8px}
+.big{font-family:var(--mono);font-weight:700;font-size:clamp(28px,5vw,40px);font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.big small{font-size:15px;color:var(--muted);font-weight:500}
+.bar{height:14px;background:var(--sunk);border-radius:7px;overflow:hidden;display:flex}
+.bar span{height:100%;transition:width .4s}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;color:var(--muted)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+.mix{display:grid;gap:8px}
+.mixrow{display:grid;grid-template-columns:minmax(0,1.6fr) 70px 22px 96px 104px;align-items:center;gap:8px;font-size:14px}
+.mixrow .lbl{display:flex;align-items:center;gap:8px;min-width:0}
+.mixrow .lbl span{overflow:hidden;text-overflow:ellipsis}
+.mixrow .x{color:var(--muted);text-align:center}
+.mixrow .sum{font-family:var(--mono);text-align:right;font-variant-numeric:tabular-nums}
+.mixhead{font-size:11px;font-family:var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+input[type=number],input[type=date],select,input[type=text]{font:500 14px var(--mono);color:var(--fg);background:var(--sunk);border:1px solid var(--line);border-radius:6px;padding:7px 8px;width:100%;min-width:0}
+select,input[type=text]{font-family:var(--body)}
+@media (max-width:560px){.mixrow{grid-template-columns:minmax(0,1fr) 60px 74px;}.mixrow .x,.mixrow .sum{display:none}}
+.note{font-size:13px;color:var(--muted)}
+/* Matrix */
+.tablewrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:500}
+td.num,th.num{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums}
+.pill{display:inline-block;font:600 12px var(--body);padding:2px 8px;border-radius:999px;white-space:nowrap}
+.p-top{background:var(--good-soft);color:var(--good)}
+.p-ok{background:var(--accent-soft);color:var(--accent)}
+.p-mid{background:var(--warn-soft);color:var(--warn)}
+.p-no{background:var(--bad-soft);color:var(--bad)}
+/* Tasks */
+.phase{display:grid;gap:10px}
+.phase-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.count{font-family:var(--mono);font-size:12px;color:var(--muted)}
+.minibar{height:5px;background:var(--sunk);border-radius:3px;overflow:hidden}
+.minibar span{display:block;height:100%;background:var(--accent)}
+ul.tasks{list-style:none;margin:0;padding:0;display:grid}
+ul.tasks li{display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--line)}
+ul.tasks li:last-child{border-bottom:0}
+ul.tasks input{width:18px;height:18px;margin-top:2px;accent-color:var(--accent);flex:none}
+ul.tasks label{cursor:pointer;min-width:0}
+ul.tasks .why{display:block;font-size:13px;color:var(--muted)}
+ul.tasks li.done label>span:first-child{text-decoration:line-through;color:var(--muted)}
+.tag{font:600 11px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);border:1px solid var(--line);border-radius:4px;padding:1px 5px;margin-left:6px;white-space:nowrap}
+/* Playbook */
+.subtabs{display:flex;gap:8px;flex-wrap:wrap}
+.subtabs button{font:600 14px var(--body);border:1px solid var(--line);background:var(--surface);color:var(--fg);padding:8px 14px;border-radius:999px;cursor:pointer}
+.subtabs button[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+.facts>div{min-width:0}
+.k{font:500 11px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+.quote{border-left:3px solid var(--accent);padding:4px 0 4px 12px;font-weight:600;max-width:70ch}
+details.chan{background:var(--surface);border:1px solid var(--line);border-radius:var(--r)}
+details.chan>summary{list-style:none;cursor:pointer;padding:14px 18px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+details.chan>summary::-webkit-details-marker{display:none}
+details.chan>summary::after{content:"+";margin-left:auto;font:700 18px var(--mono);color:var(--muted)}
+details.chan[open]>summary::after{content:"–"}
+.chan-body{padding:0 18px 18px;display:grid;gap:14px}
+ol.steps{margin:0;padding:0;list-style:none;counter-reset:s;display:grid;gap:10px}
+ol.steps li{counter-increment:s;display:grid;grid-template-columns:28px minmax(0,1fr);gap:10px}
+ol.steps li::before{content:counter(s);font:700 13px var(--mono);width:26px;height:26px;border-radius:50%;background:var(--sunk);display:grid;place-items:center}
+ol.steps b{font-weight:700}
+.script{background:var(--sunk);border-radius:6px;padding:12px 14px;font-size:14px;display:grid;gap:6px}
+.script p{max-width:72ch}
+.kpis{display:flex;flex-wrap:wrap;gap:8px}
+.kpis span{font:500 12px var(--mono);background:var(--sunk);border-radius:4px;padding:4px 8px}
+dl.obj{margin:0;display:grid;gap:10px}
+dl.obj dt{font-weight:700}
+dl.obj dd{margin:0;color:var(--muted)}
+/* Week */
+.week{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.day{background:var(--sunk);border-radius:6px;padding:12px;min-width:0}
+.day b{font-family:var(--display);display:block;margin-bottom:4px}
+.day span{font-size:13px;color:var(--muted);display:block}
+/* Log form */
+form.log{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;align-items:end}
+form.log label{display:grid;gap:4px;font-size:12px;color:var(--muted);min-width:0}
+.btn{font:700 14px var(--body);background:var(--accent);color:var(--accent-fg);border:0;border-radius:6px;padding:9px 14px;cursor:pointer}
+.btn.ghost{background:none;color:var(--muted);border:1px solid var(--line);padding:4px 8px;font-size:12px;font-weight:600}
+.empty{border:1px dashed var(--line);border-radius:var(--r);padding:22px;text-align:center;color:var(--muted)}
+.status{font-size:13px;color:var(--muted);min-height:1.2em}
+.next li{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}
+.next li:last-child{border-bottom:0}
+.next .n{font:700 12px var(--mono);color:var(--accent);flex:none;width:18px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <div class="eyebrow">2Point Media · Vertrieb</div>
+      <h1>Vertriebs-Cockpit</h1>
+    </div>
+    <div class="sync" id="sync"><span class="dot" id="syncdot"></span><span id="synctxt">Verbinde …</span></div>
+  </header>
+
+  <nav class="tabs" role="tablist" id="tabs">
+    <button role="tab" data-tab="uebersicht" aria-selected="true">Übersicht</button>
+    <button role="tab" data-tab="fahrplan" aria-selected="false">Fahrplan</button>
+    <button role="tab" data-tab="playbooks" aria-selected="false">Playbooks</button>
+    <button role="tab" data-tab="marketing" aria-selected="false">Marketing</button>
+    <button role="tab" data-tab="zahlen" aria-selected="false">Zahlen</button>
+  </nav>
+
+  <!-- ÜBERSICHT -->
+  <section class="view" id="v-uebersicht">
+    <div class="card goal">
+      <div class="goal-head">
+        <div>
+          <div class="eyebrow">Ziel: CHF 25'000 Monatsumsatz, allein</div>
+          <div class="big" id="goalNow">CHF 0 <small>/ 25'000</small></div>
+        </div>
+        <div class="count" id="goalPct">0 % erreicht</div>
+      </div>
+      <div class="bar" id="goalBar" aria-label="Fortschritt zum Monatsziel"></div>
+      <div class="legend" id="goalLegend"></div>
+      <div class="mix" id="mix">
+        <div class="mixrow mixhead"><span>Umsatzquelle</span><span>Anzahl</span><span class="x"></span><span>Preis</span><span class="sum">pro Monat</span></div>
+      </div>
+      <p class="note">Trag hier ein, was aktuell läuft. Die Preise sind Annahmen aus unserer Planung und lassen sich anpassen. Webseiten zählen mit dem Betrag, der in diesem Monat abgeschlossen wurde.</p>
+    </div>
+
+    <div class="grid2">
+      <div class="card stack">
+        <h2>Ein Weg zu 25'000</h2>
+        <p class="lead">Ein Beispiel-Mix, der allein machbar ist. Recruiting trägt den grössten Teil, weil Kunden mehrere Monate bleiben.</p>
+        <div class="tablewrap"><table>
+          <thead><tr><th>Quelle</th><th class="num">Anzahl</th><th class="num">CHF/Mt.</th></tr></thead>
+          <tbody>
+            <tr><td>Recruiting-Mandate (à 2'500)</td><td class="num">6</td><td class="num">15'000</td></tr>
+            <tr><td>Leadgen-Kunden (à 1'500)</td><td class="num">3</td><td class="num">4'500</td></tr>
+            <tr><td>Webseiten pro Monat (à 1'750)</td><td class="num">2</td><td class="num">3'500</td></tr>
+            <tr><td>Bestehende Kunden, Wartung, Content</td><td class="num">–</td><td class="num">2'000</td></tr>
+            <tr><th>Total</th><th></th><th class="num">25'000</th></tr>
+          </tbody>
+        </table></div>
+      </div>
+      <div class="card stack">
+        <h2>Als Nächstes</h2>
+        <p class="lead">Die nächsten offenen Schritte aus dem Fahrplan.</p>
+        <ol class="next" id="nextList" style="list-style:none;margin:0;padding:0"></ol>
+      </div>
+    </div>
+
+    <div class="card stack">
+      <h2>Welcher Kanal für welches Angebot</h2>
+      <div class="tablewrap"><table>
+        <thead><tr><th>Kanal</th><th>Social Recruiting</th><th>Webseiten</th><th>Leadgen</th></tr></thead>
+        <tbody>
+          <tr><td><b>Bestandskunden & Empfehlungen</b></td><td><span class="pill p-top">Sehr gut</span></td><td><span class="pill p-ok">Gut</span></td><td><span class="pill p-top">Sehr gut</span> nach Recruiting</td></tr>
+          <tr><td><b>Briefe</b></td><td><span class="pill p-top">Sehr gut</span> bei offener Stelle</td><td><span class="pill p-ok">Gut</span> Neugründer</td><td><span class="pill p-mid">Nur mit Signal</span></td></tr>
+          <tr><td><b>Cold Calls</b></td><td><span class="pill p-ok">Gut</span> als Nachfassen</td><td><span class="pill p-no">Schwach</span> kaum Nummern</td><td><span class="pill p-mid">Nur Nachfassen</span></td></tr>
+          <tr><td><b>Verbände & Partner</b></td><td><span class="pill p-ok">Gut</span> Vortrag</td><td><span class="pill p-top">Sehr gut</span> Treuhänder</td><td><span class="pill p-mid">Schwach</span></td></tr>
+        </tbody>
+      </table></div>
+      <p class="note">Grundlage: Etablierten Handwerksbetrieben fehlen meist Leute, nicht Aufträge. Darum kommt Recruiting zuerst, Leadgen erst wenn Kapazität da ist. Cold Calls wirken nur nach einem Brief (Telefon-Test: 2 von 20 Neugründern hatten eine Nummer).</p>
+    </div>
+
+    <div class="card stack">
+      <h2>Wochenrhythmus</h2>
+      <div class="week">
+        <div class="day"><b>Montag</b><span>Leads ziehen: Neueintragungen und offene Stellen</span><span>Briefe vorbereiten (1,5 h)</span></div>
+        <div class="day"><b>Dienstag</b><span>Briefe versenden</span><span>Bestandskunden anrufen (1 h)</span></div>
+        <div class="day"><b>Mittwoch</b><span>Marketing: Fallbeispiel, LinkedIn-Post, Webseite</span></div>
+        <div class="day"><b>Donnerstag</b><span>Nachfass-Anrufe Recruiting (2 h, 9–11 Uhr)</span></div>
+        <div class="day"><b>Freitag</b><span>Termine und Angebote</span><span>15 Min. Zahlen eintragen</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAHRPLAN -->
+  <section class="view" id="v-fahrplan" hidden>
+    <p class="lead">Die Schritte in der Reihenfolge, die am schnellsten Umsatz bringt. Abhaken speichert automatisch.</p>
+    <div id="phases" class="stack"></div>
+  </section>
+
+  <!-- PLAYBOOKS -->
+  <section class="view" id="v-playbooks" hidden>
+    <div class="subtabs" id="pbtabs"></div>
+    <div id="pbbody" class="stack"></div>
+  </section>
+
+  <!-- MARKETING -->
+  <section class="view" id="v-marketing" hidden>
+    <p class="lead">Marketing macht jeden Vertriebskanal stärker: Wer deinen Brief bekommt, schaut zuerst deine Webseite an. Reihenfolge: zuerst Beweise, dann Reichweite.</p>
+    <div id="mkbody" class="stack"></div>
+  </section>
+
+  <!-- ZAHLEN -->
+  <section class="view" id="v-zahlen" hidden>
+    <div class="card stack">
+      <h2>Woche eintragen</h2>
+      <p class="lead">Einmal pro Woche und Kanal. «Kontakte» heisst: Briefe versendet, Anrufe gemacht oder Leute angesprochen.</p>
+      <form class="log" id="logForm">
+        <label for="f-week">Woche ab<input type="date" id="f-week" required></label>
+        <label for="f-offer">Angebot<select id="f-offer"></select></label>
+        <label for="f-chan">Kanal<select id="f-chan"></select></label>
+        <label for="f-contacts">Kontakte<input type="number" id="f-contacts" min="0" value="0"></label>
+        <label for="f-talks">Gespräche<input type="number" id="f-talks" min="0" value="0"></label>
+        <label for="f-meet">Termine<input type="number" id="f-meet" min="0" value="0"></label>
+        <label for="f-won">Abschlüsse<input type="number" id="f-won" min="0" value="0"></label>
+        <label for="f-rev">Umsatz CHF<input type="number" id="f-rev" min="0" value="0"></label>
+        <button class="btn" type="submit">Speichern</button>
+      </form>
+      <div class="status" id="logStatus" role="status"></div>
+    </div>
+
+    <div class="card stack">
+      <h2>Was funktioniert</h2>
+      <p class="lead">Quoten pro Kanal über alle Einträge. Nach 4–6 Wochen siehst du, welchen Kanal du verdoppeln und welchen du streichen solltest.</p>
+      <div id="agg"></div>
+    </div>
+
+    <div class="card stack">
+      <h2>Alle Einträge</h2>
+      <div id="logTable"></div>
+    </div>
+  </section>
+</div>
+
+<script>
+(function(){
+const GOAL=25000;
+const COLORS={rec:"var(--accent)",lg:"var(--good)",web:"var(--warn)",fix:"var(--muted)"};
+const MIX=[
+  {id:"rec",label:"Recruiting-Mandate aktiv",price:2500},
+  {id:"lg",label:"Leadgen-Kunden aktiv",price:1500},
+  {id:"web",label:"Webseiten abgeschlossen (Monat)",price:1750},
+  {id:"fix",label:"Bestehende Kunden, Wartung, Content",price:1,fixed:true}
+];
+const OFFERS=["Social Recruiting","Webseiten","Leadgen"];
+const CHANNELS=["Bestandskunden & Empfehlungen","Briefe","Cold Calls","Verbände & Partner","Marketing & Anfragen"];
+
+const PHASES=[
+ {name:"Woche 1–2",goal:"Fundament legen und schnellen Umsatz aus Bestandskunden holen",tasks:[
+  ["p1a","Liste aller aktuellen und früheren Kunden erstellen","Basis für Empfehlungen und Nachverkauf","Bestand"],
+  ["p1b","Jeden Bestandskunden anrufen: Wie läuft es mit Personal? Wen kennst du, der sucht?","Schnellster und günstigster Weg zum ersten Recruiting-Mandat","Bestand"],
+  ["p1c","Recruiting-Pauschalpaket festlegen: Leistung, Preis, was versprochen wird","Bewerbungen und Gespräche versprechen, keine Einstellungen","Angebot"],
+  ["p1d","Webseiten-Gründerpaket festlegen: Webseite, Google-Profil, Verzeichnisse, Bewertungen","CHF 1'500–2'500 statt 1'000, als eine Pauschale","Angebot"],
+  ["p1e","Recruiting-Landingpage auf 2pointmedia.ch bauen","Jeder QR-Code im Brief landet hier","Marketing"],
+  ["p1f","20 Neugründer-Briefe aus der Stichprobe versenden (QR-Code, WhatsApp-Nummer)","Testet die ganze Brief-Mechanik mit wenig Risiko","Briefe"]
+ ]},
+ {name:"Woche 3–4",goal:"Den Recruiting-Motor starten",tasks:[
+  ["p2a","Skript: HubSpot-Firmen wöchentlich auf offene Stellen prüfen","Claude baut es; schreibt «offene Stelle seit X Wochen» in HubSpot","Daten"],
+  ["p2b","Job-Abos auf jobs.ch und Indeed einrichten (Region, Handwerksberufe)","Bringt täglich neue Betriebe mit offenen Stellen","Daten"],
+  ["p2c","Recruiting-Briefvorlage und Gesprächsleitfaden fertigstellen","Siehe Playbook Social Recruiting","Briefe"],
+  ["p2d","Erste 25 Recruiting-Briefe versenden","Nur Betriebe, deren Stelle seit mindestens 4 Wochen offen ist","Briefe"],
+  ["p2e","Nachfass-Anrufe 3–5 Tage nach Zustellung","Ziel des Anrufs: ein Termin von 20 Minuten","Calls"],
+  ["p2f","Nachfass-Postkarten an die Neugründer ohne Antwort","Ersetzt den Anruf, wo keine Nummer zu finden ist","Briefe"]
+ ]},
+ {name:"Monat 2",goal:"Partner gewinnen und Beweise sammeln",tasks:[
+  ["p3a","5 Treuhänder ansprechen, die viele Gründer betreuen","Die «c/o»-Adressen im Handelsregister zeigen, wer das ist","Partner"],
+  ["p3b","Fallbeispiel-Video aus dem ersten Recruiting-Erfolg drehen","60–90 Sekunden, der Kunde erzählt selbst","Marketing"],
+  ["p3c","Liste mit Gründungen von vor 3–12 Monaten ziehen","Dort sind viel mehr Nummern auffindbar, Brief plus Anruf funktioniert","Briefe"],
+  ["p3d","Beim Gewerbeverein einen Vortrag zum Fachkräftemangel anfragen","Bringt dich vor 30–80 Inhaber auf einmal","Partner"],
+  ["p3e","LinkedIn: 2 Beiträge pro Woche starten","Themen: Fachkräfte finden, Ergebnisse von Kunden","Marketing"]
+ ]},
+ {name:"Monat 3",goal:"Verstärken, was funktioniert",tasks:[
+  ["p4a","Retargeting-Anzeigen starten (CHF 5–10 pro Tag)","Erst wenn Landingpage und Fallbeispiel stehen","Marketing"],
+  ["p4b","Leadgen-Pilot dem ersten erfolgreichen Recruiting-Kunden anbieten","Neue Mitarbeiter brauchen Aufträge","Bestand"],
+  ["p4c","Zahlen auswerten: besten Kanal verdoppeln, schwächsten streichen","Siehe Reiter «Zahlen»","Zahlen"],
+  ["p4d","Webseiten-Kunden nach 3–6 Monaten anrufen","Einstieg für Leadgen oder Recruiting","Bestand"]
+ ]}
+];
+
+const P={top:'<span class="pill p-top">Priorität 1</span>',ok:'<span class="pill p-ok">Priorität 2</span>',mid:'<span class="pill p-mid">Priorität 3</span>'};
+const PLAYBOOKS={
+ "Social Recruiting":{
+  role:"Hauptmotor. Trifft das grösste Problem der Betriebe und bringt monatlich wiederkehrenden Umsatz.",
+  who:"Handwerks- und Technik-KMU mit 5–50 Mitarbeitenden in der Nordwestschweiz.",
+  signal:"Eine Stelle ist seit mindestens 4 Wochen online, auf der eigenen Webseite oder auf jobs.ch/Indeed.",
+  price:"Monatsmandat, Annahme CHF 2'500. Kunde bleibt im Schnitt etwa 6 Monate.",
+  msg:"«Ihre Stelle als Elektromonteur ist seit 7 Wochen online. Wir bringen Ihnen in 30 Tagen passende Bewerbungen, über Social Media, wo die Fachkräfte sind, die nicht aktiv suchen.»",
+  channels:[
+   {name:"Bestandskunden & Empfehlungen",p:"top",steps:[
+    "<b>Liste</b> aller aktuellen und früheren Kunden öffnen.",
+    "<b>Prüfen</b>, wer gerade eine Stelle ausgeschrieben hat (eigene Webseite, jobs.ch).",
+    "<b>Anrufen</b>, nicht mailen. Einstieg: «Wie läuft es bei euch mit Personal?»",
+    "Bei Bedarf: <b>Termin</b> für 20 Minuten, dort Pauschalangebot zeigen.",
+    "Nach jedem Abschluss und jeder Lieferung <b>konkret nach Empfehlungen fragen</b>: «Wer in deinem Umfeld sucht gerade Monteure?»",
+    "Für jede Empfehlung, die Kunde wird, ein <b>Dankeschön</b> festlegen (z.B. Gutschrift oder Essen)."],
+    kpi:["Ziel: 1 Mandat aus Bestand in den ersten 4 Wochen","Jeder Kunde wird 1× pro Quartal nach Empfehlungen gefragt"]},
+   {name:"Brief + Nachfass-Anruf",p:"top",steps:[
+    "<b>Leads</b>: HubSpot-Firmen mit offener Stelle (Skript) plus neue Betriebe aus den Job-Abos.",
+    "<b>Filtern</b>: Stelle seit mindestens 4 Wochen offen, Handwerk oder Technik, deine Region.",
+    "<b>Brief</b> pro Betrieb: ihr Inserat abgedruckt, die Kernbotschaft, QR-Code zur Recruiting-Landingpage oder zum Fallbeispiel.",
+    "<b>Telefonnummer</b> notieren (bei etablierten Betrieben fast immer auf Webseite oder im Telefonbuch).",
+    "<b>Anruf</b> 3–5 Tage nach Zustellung, am besten Donnerstag 9–11 Uhr. Leitfaden unten.",
+    "Nicht erreicht: <b>2. Versuch</b> eine Woche später, dann kurze Postkarte.",
+    "Termin: <b>20 Minuten</b> vor Ort oder per Video. Situation klären, Ablauf zeigen, Pauschalangebot innert 24 Stunden."],
+    script:["«Grüezi Herr Muster, Benjamin von 2Point Media. Ich habe Ihnen letzte Woche einen Brief geschickt wegen Ihrer Stelle als Elektromonteur. Ist die Stelle noch offen?»",
+     "Ja: «Wie viele Bewerbungen sind bisher gekommen?» Zuhören.",
+     "«Wir erreichen genau die Leute, die nicht aktiv suchen, aber wechseln würden. Darf ich Ihnen in 20 Minuten zeigen, wie das bei [Referenzkunde] gelaufen ist?»",
+     "Nein: «Super. Darf ich mich melden, wenn Sie das nächste Mal jemanden suchen?» In HubSpot Wiedervorlage in 3 Monaten."],
+    kpi:["25 Briefe/Monat","Ziel: 30–50 % erreicht","Ziel: 4–6 Termine","Ziel: 1–2 Mandate"]},
+   {name:"Verbände & Partner",p:"ok",steps:[
+    "<b>Gewerbevereine</b> und Handwerksverbände in deiner Region auflisten (BS, BL, AG, SO).",
+    "Vortrag anbieten: <b>«Fachkräfte finden ohne Personalvermittler»</b>, 20 Minuten, gratis.",
+    "Im Vortrag <b>ein echtes Fallbeispiel</b> zeigen, keine Verkaufsfolien.",
+    "Am Ende: <b>kostenlose Stellenanalyse</b> anbieten, Kontaktdaten per Liste oder QR-Code einsammeln.",
+    "Innert 48 Stunden alle <b>anrufen</b>, die Interesse gezeigt haben."],
+    kpi:["1 Vortrag pro Quartal","Ziel: 3–5 Termine pro Vortrag"]}
+  ],
+  obj:[
+   ["«Wir haben schon Inserate geschaltet.»","Inserate erreichen nur aktiv Suchende. Die meisten guten Monteure haben einen Job und schauen nicht auf jobs.ch. Social Media erreicht sie trotzdem."],
+   ["«Zu teuer.»","Ein Personalvermittler verlangt 15–25 % eines Jahreslohns, schnell CHF 15'000 für eine Person. Und jeder Monat ohne Monteur kostet Aufträge."],
+   ["«Keine Zeit dafür.»","Wir machen Anzeigen, Texte und Vorauswahl. Sie führen nur noch die Gespräche."],
+   ["«Funktioniert das bei uns?»","Ehrlich bleiben: Wir versprechen Bewerbungen und Gespräche, keine Einstellung. Mit einem Fallbeispiel aus derselben Branche zeigen."]]
+ },
+ "Webseiten":{
+  role:"Einstieg. Günstig für den Kunden, öffnet die Tür für Recruiting und Leadgen später.",
+  who:"Neugründer aus Handwerk und lokalen Dienstleistungen; Betriebe mit veralteter oder fehlender Webseite.",
+  signal:"Neueintrag im Handelsregister (BS, BL, AG, SO) und keine Webseite auffindbar.",
+  price:"Gründerpaket CHF 1'500–2'500 als eine Pauschale, plus Wartung CHF 500 pro Jahr.",
+  msg:"«Gratulation zur Gründung! Wer heute in Ihrem Ort einen Elektriker sucht, bei Google oder ChatGPT, findet diese Namen. Ihrer fehlt noch. Das ändern wir.»",
+  channels:[
+   {name:"Treuhänder als Partner",p:"top",steps:[
+    "<b>Treuhänder finden</b>, die viele Gründer betreuen: Die «c/o»-Adressen in den Neueintragungen zeigen sie.",
+    "<b>Einseitiges Angebot</b> für ihre Gründer-Kunden: Paket, Preis, Ablauf, ein Beispiel.",
+    "<b>Termin</b> mit dem Treuhänder: Was haben seine Kunden davon? Was hat er davon?",
+    "<b>Provision</b> festlegen, z.B. 10 % pro vermitteltem Kunden.",
+    "Alle 3 Monate <b>nachfassen</b> und von gemeinsamen Kunden berichten."],
+    kpi:["5 Treuhänder in Monat 2","Ziel: 2 aktive Partner"]},
+   {name:"Briefe an Neugründer",p:"ok",steps:[
+    "<b>Jeden Montag</b> die Neueintragungen für BS, BL, AG, SO ziehen.",
+    "<b>Filtern</b>: Handwerk und lokale Dienstleister. Raus: Holdings, Immobilien, Zweigniederlassungen, bestehende Betriebe mit Webseite.",
+    "<b>Vorschau-Webseite</b> mit ihrem Namen aus der Vorlage bauen (Ziel: 20 Minuten pro Stück).",
+    "<b>Brief</b> mit Münzen, ChatGPT-Screenshot, QR-Code zur Vorschau und WhatsApp-Nummer.",
+    "Nach <b>10 Tagen Postkarte</b>: «Ihre Webseite ist noch 14 Tage reserviert.»",
+    "Hat der Betrieb einen <b>Laden</b> (Coiffeur, Café, Werkstatt): kurz vorbeigehen. An Privatadressen nicht klingeln.",
+    "<b>Ältere Gründungen</b> (3–12 Monate) mit Brief plus Anruf angehen; dort sind die Nummern zu finden."],
+    kpi:["50 Briefe/Monat","Ziel: 2–4 % melden sich selbst","Ziel: 1–2 Abschlüsse"]},
+   {name:"Bestandskunden & Empfehlungen",p:"ok",steps:[
+    "Zufriedene Webseiten-Kunden um eine <b>Google-Bewertung</b> und eine Empfehlung bitten.",
+    "Bestehende Kunden mit <b>veralteter Webseite</b> auf eine Erneuerung ansprechen."],
+    kpi:["Jeder Abschluss: Bewertung plus Empfehlungsfrage"]}
+  ],
+  obj:[
+   ["«Mache ich mit Wix selbst.»","Kann man. Aber Google-Profil, Verzeichnisse und Bewertungen machen die meisten nie fertig, und genau die bringen Anfragen."],
+   ["«Später, zuerst kommen die Aufträge.»","Die ersten Aufträge kommen von Leuten, die Sie suchen. Ohne Auftritt finden sie die Konkurrenz."],
+   ["«Zu teuer.»","Ein einziger Auftrag über die Webseite bezahlt sie meistens schon."]]
+ },
+ "Leadgen":{
+  role:"Ausbau. Nicht kalt verkaufen: Betriebe mit vollen Auftragsbüchern brauchen keine Leads.",
+  who:"Betriebe mit freier Kapazität: Recruiting-Kunden nach einer Einstellung, Neugründer nach 3–6 Monaten, Betriebe, die gezielt lukrativere Aufträge wollen (z.B. Wärmepumpen statt Reparaturen).",
+  signal:"Neue Mitarbeiter eingestellt, Gründung vor 3–6 Monaten, neues Angebot gestartet.",
+  price:"Monatlich, Annahme CHF 1'500 plus Werbebudget des Kunden.",
+  msg:"«Sie haben jetzt zwei Monteure mehr. Damit die ausgelastet sind, sorgen wir für die passenden Aufträge.»",
+  channels:[
+   {name:"Nachverkauf an Recruiting-Kunden",p:"top",steps:[
+    "4–8 Wochen nach einer <b>erfolgreichen Einstellung</b> anrufen.",
+    "Frage: <b>«Sind die neuen Leute gut ausgelastet?»</b>",
+    "<b>Pilot über 3 Monate</b> anbieten, mit klarem Ziel (Anzahl Anfragen).",
+    "Nach dem Pilot: Ergebnisse zeigen und <b>verlängern</b>."],
+    kpi:["Ziel: jeder 3. Recruiting-Kunde bucht Leadgen"]},
+   {name:"Webseiten-Kunden nach 3–6 Monaten",p:"ok",steps:[
+    "<b>Check-in-Anruf</b>: Wie viele Anfragen kommen über die Webseite?",
+    "Bei Wunsch nach mehr: <b>Leadgen-Pilot</b> mit kleinem Budget."],
+    kpi:["Jeder Webseiten-Kunde: Check-in nach 3 und 6 Monaten"]},
+   {name:"Brief mit Signal",p:"mid",steps:[
+    "Nur bei klarem Signal, z.B. ein Betrieb hat ein <b>neues Angebot</b> auf der Webseite (Wärmepumpen, Badsanierung).",
+    "Brief: Wie viele Leute in der Region <b>danach suchen</b>, und wer dort heute gefunden wird."],
+    kpi:["Erst ab Monat 3 testen"]}
+  ],
+  obj:[
+   ["«Wir haben genug Arbeit.»","Dann ist jetzt nicht der Moment. Fragen, ob Personal das Problem ist: Einstieg für Recruiting."],
+   ["«Werbung hat bei uns nie funktioniert.»","Fragen, was genau gemacht wurde. Pilot mit kleinem Budget und klarem Ziel anbieten."]]
+ }
+};
+
+const MARKETING=[
+ {name:"Webseite 2pointmedia.ch",when:"Woche 1–2",p:"top",why:"Jeder Brief, jeder Anruf und jede Empfehlung führt zuerst auf deine Webseite.",steps:[
+  "Klare Botschaft oben: <b>«Wir finden Kunden und Mitarbeiter für Handwerksbetriebe.»</b>",
+  "Eine <b>eigene Seite pro Angebot</b>, Recruiting zuerst. Diese Seite ist das Ziel der QR-Codes.",
+  "Pro Seite: Problem, Ablauf in 3 Schritten, ein Fallbeispiel, Preisrahmen, <b>Termin buchen</b>.",
+  "Einfache Terminbuchung (20 Minuten) direkt auf der Seite."]},
+ {name:"Fallbeispiele",when:"ab erstem Erfolg",p:"top",why:"Dein grösster Vorteil: Du kannst zeigen statt behaupten. Stärkt Briefe, Gespräche und Anzeigen.",steps:[
+  "Nach jedem guten Ergebnis: <b>Kunde vor die Kamera</b>, 60–90 Sekunden.",
+  "Aufbau: Problem vorher, was wir gemacht haben, Ergebnis mit <b>echten Zahlen</b>.",
+  "Auf der Landingpage, im Brief per QR-Code und im Verkaufsgespräch einsetzen."]},
+ {name:"LinkedIn und Instagram",when:"Monat 2",p:"ok",why:"Macht dich bei Inhabern bekannt, bevor dein Brief kommt.",steps:[
+  "<b>2 Beiträge pro Woche</b>, fester Tag (Mittwoch im Wochenrhythmus).",
+  "Themen: Fachkräftemangel im Handwerk, Tipps für Stelleninserate, Ergebnisse von Kunden.",
+  "Mit Inhabern aus deiner Region vernetzen, besonders mit denen, die einen Brief bekommen haben."]},
+ {name:"Anzeigen",when:"Monat 3",p:"mid",why:"Erst wenn Landingpage und Fallbeispiel stehen. Vorher verbrennt Werbung nur Geld.",steps:[
+  "<b>Retargeting zuerst</b>: Anzeigen nur an Leute, die schon auf deiner Seite waren (z.B. über den QR-Code im Brief). Budget CHF 5–10 pro Tag.",
+  "Inhalt: das Fallbeispiel-Video plus «Termin buchen».",
+  "Später testen: Anzeigen an Inhaber von Handwerksbetrieben in deiner Region, mit kleinem Budget und klarem Ziel (Kosten pro Termin)."]}
+];
+
+/* ---------- state ---------- */
+let state={done:{},mix:{rec:0,lg:0,web:0,fix:0,price_rec:2500,price_lg:1500,price_web:1750}};
+let logs=[];
+let db=null, stateRef=null, writing=Promise.resolve();
+const $=s=>document.querySelector(s);
+const fmt=n=>"CHF "+Math.round(n).toLocaleString("de-CH");
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+function setSync(kind,txt){$("#syncdot").className="dot "+kind;$("#synctxt").textContent=txt;}
+function save(){
+  if(!stateRef) return;
+  const body=JSON.parse(JSON.stringify(state));
+  writing=writing.then(()=>stateRef.set(body)).then(()=>setSync("on","Gespeichert")).catch(e=>setSync("off","Speichern fehlgeschlagen"));
+}
+let mixTimer=null;
+function saveSoon(){clearTimeout(mixTimer);mixTimer=setTimeout(save,700);}
+
+/* ---------- tabs ---------- */
+const TABS=["uebersicht","fahrplan","playbooks","marketing","zahlen"];
+function showTab(t){
+  if(!TABS.includes(t)) t="uebersicht";
+  document.querySelectorAll("#tabs button").forEach(b=>b.setAttribute("aria-selected",b.dataset.tab===t?"true":"false"));
+  TABS.forEach(x=>{$("#v-"+x).hidden=x!==t;});
+  try{localStorage.setItem("tab",t)}catch(e){}
+}
+$("#tabs").addEventListener("click",e=>{const b=e.target.closest("button");if(b)showTab(b.dataset.tab);});
+
+/* ---------- goal & mix ---------- */
+function mixValue(id){const m=state.mix;return id==="fix"?(+m.fix||0):(+m[id]||0)*(+m["price_"+id]||0);}
+function buildMix(){
+  const box=$("#mix");
+  MIX.forEach(r=>{
+    const row=document.createElement("div");row.className="mixrow";
+    row.innerHTML=r.fixed
+      ?`<div class="lbl"><i style="background:${COLORS[r.id]};width:10px;height:10px;border-radius:2px;flex:none;display:inline-block"></i><span>${r.label}</span></div><span></span><span class="x"></span><input type="number" id="mx-${r.id}" min="0" step="100" aria-label="${r.label} CHF pro Monat"><span class="sum" id="ms-${r.id}"></span>`
+      :`<div class="lbl"><i style="background:${COLORS[r.id]};width:10px;height:10px;border-radius:2px;flex:none;display:inline-block"></i><span>${r.label}</span></div><input type="number" id="mx-${r.id}" min="0" aria-label="${r.label} Anzahl"><span class="x">×</span><input type="number" id="mp-${r.id}" min="0" step="50" aria-label="${r.label} Preis"><span class="sum" id="ms-${r.id}"></span>`;
+    box.appendChild(row);
+    row.querySelector("#mx-"+r.id).addEventListener("input",e=>{state.mix[r.id]=Math.max(0,+e.target.value||0);renderGoal();saveSoon();});
+    const p=row.querySelector("#mp-"+r.id);
+    if(p) p.addEventListener("input",e=>{state.mix["price_"+r.id]=Math.max(0,+e.target.value||0);renderGoal();saveSoon();});
+  });
+}
+function fillMixInputs(){
+  MIX.forEach(r=>{
+    const a=$("#mx-"+r.id); if(a && document.activeElement!==a) a.value=state.mix[r.id]||0;
+    const p=$("#mp-"+r.id); if(p && document.activeElement!==p) p.value=state.mix["price_"+r.id]||0;
+  });
+}
+function renderGoal(){
+  let total=0;const parts=[];
+  MIX.forEach(r=>{const v=mixValue(r.id);total+=v;parts.push([r,v]);$("#ms-"+r.id).textContent=fmt(v);});
+  $("#goalNow").innerHTML=fmt(total)+" <small>/ 25'000</small>";
+  const pct=Math.round(total/GOAL*100);
+  $("#goalPct").textContent=pct+" % erreicht"+(total<GOAL?" · fehlen "+fmt(GOAL-total):"");
+  const scale=Math.max(GOAL,total);
+  $("#goalBar").innerHTML=parts.map(([r,v])=>`<span style="width:${v/scale*100}%;background:${COLORS[r.id]}" title="${r.label}"></span>`).join("");
+  $("#goalLegend").innerHTML=parts.map(([r,v])=>`<span><i style="background:${COLORS[r.id]}"></i>${r.label.split(" ")[0]} ${fmt(v)}</span>`).join("");
+}
+
+/* ---------- fahrplan ---------- */
+function renderPhases(){
+  $("#phases").innerHTML=PHASES.map((ph,i)=>{
+    const d=ph.tasks.filter(t=>state.done[t[0]]).length;
+    return `<div class="card phase"><div class="phase-head"><div><div class="eyebrow">${ph.name}</div><h2>${ph.goal}</h2></div><span class="count">${d} / ${ph.tasks.length}</span></div>
+    <div class="minibar"><span style="width:${d/ph.tasks.length*100}%"></span></div>
+    <ul class="tasks">${ph.tasks.map(t=>`<li class="${state.done[t[0]]?"done":""}"><input type="checkbox" id="t-${t[0]}" data-id="${t[0]}" ${state.done[t[0]]?"checked":""}><label for="t-${t[0]}"><span>${t[1]}</span><span class="tag">${t[3]}</span><span class="why">${t[2]}</span></label></li>`).join("")}</ul></div>`;
+  }).join("");
+  renderNext();
+}
+$("#phases").addEventListener("change",e=>{
+  const id=e.target.dataset.id;if(!id)return;
+  if(e.target.checked) state.done[id]=true; else delete state.done[id];
+  renderPhases();save();
+});
+function renderNext(){
+  const open=[];PHASES.forEach(ph=>ph.tasks.forEach(t=>{if(!state.done[t[0]])open.push([ph.name,t]);}));
+  $("#nextList").innerHTML=open.length?open.slice(0,5).map(([p,t],i)=>`<li><span class="n">${i+1}</span><span>${t[1]}<span class="why" style="display:block;font-size:13px;color:var(--muted)">${p} · ${t[3]}</span></span></li>`).join(""):`<li>Alle Schritte erledigt. Zeit für den nächsten Plan.</li>`;
+}
+
+/* ---------- playbooks ---------- */
+let pbCur="Social Recruiting";
+function renderPB(){
+  $("#pbtabs").innerHTML=Object.keys(PLAYBOOKS).map(k=>`<button type="button" aria-pressed="${k===pbCur}" data-k="${k}">${k}</button>`).join("");
+  const pb=PLAYBOOKS[pbCur];
+  $("#pbbody").innerHTML=`
+  <div class="card stack">
+    <p class="lead">${pb.role}</p>
+    <div class="facts">
+      <div><div class="k">Zielkunde</div><p>${pb.who}</p></div>
+      <div><div class="k">Signal</div><p>${pb.signal}</p></div>
+      <div><div class="k">Preis</div><p>${pb.price}</p></div>
+    </div>
+    <div><div class="k">Kernbotschaft</div><p class="quote">${pb.msg}</p></div>
+  </div>
+  ${pb.channels.map((c,i)=>`<details class="chan" ${i===0?"open":""}><summary>${P[c.p]}<h3>${c.name}</h3></summary>
+    <div class="chan-body">
+      <ol class="steps">${c.steps.map(s=>`<li><span>${s}</span></li>`).join("")}</ol>
+      ${c.script?`<div><div class="k">Gesprächsleitfaden</div><div class="script">${c.script.map(s=>`<p>${s}</p>`).join("")}</div></div>`:""}
+      <div class="kpis">${c.kpi.map(k=>`<span>${k}</span>`).join("")}</div>
+    </div></details>`).join("")}
+  <div class="card stack"><h2>Einwände und Antworten</h2><dl class="obj">${pb.obj.map(o=>`<div><dt>${o[0]}</dt><dd>${o[1]}</dd></div>`).join("")}</dl></div>`;
+}
+$("#pbtabs").addEventListener("click",e=>{const b=e.target.closest("button");if(b){pbCur=b.dataset.k;renderPB();}});
+
+/* ---------- marketing ---------- */
+function renderMK(){
+  $("#mkbody").innerHTML=MARKETING.map((m,i)=>`<details class="chan" ${i<2?"open":""}><summary>${P[m.p]}<h3>${m.name}</h3><span class="count">${m.when}</span></summary>
+  <div class="chan-body"><p class="lead">${m.why}</p><ol class="steps">${m.steps.map(s=>`<li><span>${s}</span></li>`).join("")}</ol></div></details>`).join("");
+}
+
+/* ---------- zahlen ---------- */
+function fillSelect(id,arr){$(id).innerHTML=arr.map(a=>`<option>${esc(a)}</option>`).join("");}
+fillSelect("#f-offer",OFFERS);fillSelect("#f-chan",CHANNELS);
+(function(){const d=new Date();const day=(d.getDay()+6)%7;d.setDate(d.getDate()-day);$("#f-week").value=d.toISOString().slice(0,10);})();
+const pct=(a,b)=>b>0?Math.round(a/b*100)+" %":"–";
+function renderLogs(){
+  if(!logs.length){
+    $("#logTable").innerHTML=`<div class="empty">Noch keine Einträge. Trag am Freitag deine erste Woche oben ein, z.B. «Briefe · 25 Kontakte · 3 Termine».</div>`;
+    $("#agg").innerHTML=`<div class="empty">Sobald Einträge da sind, erscheinen hier die Quoten pro Kanal: Termin pro Kontakt, Abschluss pro Termin und Umsatz.</div>`;
+    return;
+  }
+  $("#logTable").innerHTML=`<div class="tablewrap"><table><thead><tr><th>Woche</th><th>Angebot</th><th>Kanal</th><th class="num">Kont.</th><th class="num">Gespr.</th><th class="num">Term.</th><th class="num">Abschl.</th><th class="num">CHF</th><th></th></tr></thead><tbody>
+  ${logs.map(l=>`<tr><td class="num" style="text-align:left">${esc(l.week||"")}</td><td>${esc(l.offer||"")}</td><td>${esc(l.channel||"")}</td><td class="num">${l.contacts||0}</td><td class="num">${l.talks||0}</td><td class="num">${l.meetings||0}</td><td class="num">${l.won||0}</td><td class="num">${(l.revenue||0).toLocaleString("de-CH")}</td><td><button class="btn ghost" data-del="${esc(l.id)}" type="button">Löschen</button></td></tr>`).join("")}
+  </tbody></table></div>`;
+  const by={};
+  logs.forEach(l=>{const k=l.channel||"–";by[k]=by[k]||{c:0,t:0,m:0,w:0,r:0};const a=by[k];a.c+=+l.contacts||0;a.t+=+l.talks||0;a.m+=+l.meetings||0;a.w+=+l.won||0;a.r+=+l.revenue||0;});
+  const rows=Object.entries(by).sort((a,b)=>b[1].r-a[1].r);
+  $("#agg").innerHTML=`<div class="tablewrap"><table><thead><tr><th>Kanal</th><th class="num">Kontakte</th><th class="num">Termine</th><th class="num">Termin/Kontakt</th><th class="num">Abschlüsse</th><th class="num">Abschluss/Termin</th><th class="num">Umsatz</th></tr></thead><tbody>
+  ${rows.map(([k,a])=>`<tr><td><b>${esc(k)}</b></td><td class="num">${a.c}</td><td class="num">${a.m}</td><td class="num">${pct(a.m,a.c)}</td><td class="num">${a.w}</td><td class="num">${pct(a.w,a.m)}</td><td class="num">${a.r.toLocaleString("de-CH")}</td></tr>`).join("")}
+  </tbody></table></div>`;
+}
+$("#logForm").addEventListener("submit",async e=>{
+  e.preventDefault();
+  if(!db){$("#logStatus").textContent="Speichern ist in dieser Ansicht nicht verfügbar. Öffne das Cockpit angemeldet auf claude.ai.";return;}
+  const entry={week:$("#f-week").value,offer:$("#f-offer").value,channel:$("#f-chan").value,
+    contacts:+$("#f-contacts").value||0,talks:+$("#f-talks").value||0,meetings:+$("#f-meet").value||0,won:+$("#f-won").value||0,revenue:+$("#f-rev").value||0,createdAt:new Date().toISOString()};
+  try{await db.collection("log").add(entry);$("#logStatus").textContent="Gespeichert.";["#f-contacts","#f-talks","#f-meet","#f-won","#f-rev"].forEach(s=>$(s).value=0);}
+  catch(err){$("#logStatus").textContent=err&&err.code==="quota_exceeded"?"Speicher voll. Lösche alte Einträge.":"Speichern fehlgeschlagen. Bitte nochmal versuchen.";}
+});
+$("#logTable").addEventListener("click",async e=>{
+  const id=e.target.dataset&&e.target.dataset.del;if(!id||!db)return;
+  if(e.target.dataset.confirm!=="1"){e.target.dataset.confirm="1";e.target.textContent="Sicher?";setTimeout(()=>{if(e.target.isConnected){e.target.dataset.confirm="";e.target.textContent="Löschen";}},3000);return;}
+  try{await db.collection("log").doc(id).delete();}catch(err){$("#logStatus").textContent="Löschen fehlgeschlagen.";}
+});
+
+/* ---------- init ---------- */
+buildMix();fillMixInputs();renderGoal();renderPhases();renderPB();renderMK();renderLogs();
+try{const t=localStorage.getItem("tab");if(t)showTab(t);}catch(e){}
+if(location.hash) showTab(location.hash.slice(1));
+
+(async()=>{
+  try{db=window.claude&&await window.claude.use("db");}catch(e){db=null;}
+  if(!db){setSync("off","Nur Ansicht: Speichern nicht verfügbar");return;}
+  setSync("on","Verbunden");
+  stateRef=db.doc("cockpit/state");
+  stateRef.onSnapshot(s=>{
+    if(s.exists){const d=s.data()||{};state={done:Object.assign({},d.done||{}),mix:Object.assign({},state.mix,d.mix||{})};}
+    fillMixInputs();renderGoal();renderPhases();
+  },()=>setSync("off","Verbindung unterbrochen"));
+  db.collection("log").orderBy("week","desc").onSnapshot(s=>{
+    logs=s.docs.map(d=>Object.assign({id:d.id},d.data()));renderLogs();
+  },()=>setSync("off","Verbindung unterbrochen"));
+})();
+})();
+</script>
+
+</body></html>
